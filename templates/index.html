@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>MIDI Converter</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <h1>MIDI Converter</h1>
+  <form method="post" enctype="multipart/form-data">
+    <label for="root_note">Root Note:</label>
+    <select id="root_note" name="root_note">
+      <option value="C">C</option>
+      <option value="C#">C#</option>
+      <option value="D">D</option>
+      <option value="D#">D#</option>
+      <option value="E">E</option>
+      <option value="F">F</option>
+      <option value="F#">F#</option>
+      <option value="G">G</option>
+      <option value="G#">G#</option>
+      <option value="A">A</option>
+      <option value="A#">A#</option>
+      <option value="B">B</option>
+    </select>
+    <br>
+    <button type="button" id="auto_duration">Auto Duration</button>
+    <label for="note_duration">Note Duration:</label>
+    <select id="note_duration" name="note_duration">
+      <option value="1/1">1/1 (Whole Note)</option>
+      <option value="1/2">1/2 (Half Note)</option>
+      <option value="1/4">1/4 (Quarter Note)</option>
+      <option value="1/8">1/8 (Eighth Note)</option>
+      <option value="1/16">1/16 (Sixteenth Note)</option>
+    </select>
+    <br>
+    <label for="notes_string">Enter notes:</label>
+    <textarea id="notes_string" name="notes_string" rows="4" cols="50"></textarea>
+    <br>
+    <label for="tempo">Tempo (BPM):</label>
+    <input type="number" id="tempo" name="tempo" value="120" min="20" max="240" step="1">
+    <br>
+    <label for="velocity">Velocity (1-127):</label>
+    <input type="number" id="velocity" name="velocity" value="64" min="1" max="127" step="1">
+    <br>
+    <input type="submit" value="Convert">
+  </form>
+  <div id="midi_conversion">
+    <form method="post" enctype="multipart/form-data" id="midi_form">
+      <label for="midi_file">Select MIDI file:</label>
+      <input type="file" id="midi_file" name="midi_file">
+      <br>
+      <input type="submit" value="Convert">
+    </form>
+    {% if converted_notes %}
+    <h2>Converted notes:</h2>
+    <textarea id="converted_notes" name="converted_notes" rows="4" cols="50" readonly>{{ converted_notes }}</textarea>
+    <br>
+    <button type="button" id="download_text_file">Download as Text File</button>
+    {% endif %}
+  </div>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</body>
+<script>
+  // Отправка запроса на конвертацию MIDI-файла в текстовую нотацию
+  $('#midi_form').submit(function (event) {
+    event.preventDefault();
+    let form_data = new FormData(this);
+    $.ajax({
+      type: 'POST',
+      url: '/convert',
+      data: form_data,
+      processData: false,
+      contentType: false,
+      cache: false,
+      success: function (response) {
+        $('#converted_notes').val(response);
+      },
+      error: function () {
+        alert('Error converting MIDI file');
+      }
+    });
+  });
+
+  // Загрузка текстового файла с нотацией
+  $('#download_text_file').click(function () {
+    let text = $('#converted_notes').val();
+    let filename = 'notes.txt';
+    let blob = new Blob([text], {
+      type: 'text/plain'
+    });
+    let url = URL.createObjectURL(blob);
+    let a = $('<a></a>');
+    a.attr('href', url);
+    a.attr('download', filename);
+    $('body').append(a);
+    a[0].click();
+    $('body').remove(a);
+  });
+
+  // Автоматический расчет длительности ноты при нажатии на кнопку
+  $('#auto_duration').click(function () {
+    let note_duration = $('#note_duration').val();
+    let bpm = $('#tempo').val();
+    let duration;
+    switch (note_duration) {
+      case '1/1':
+        duration = 4;
+        break;
+      case '1/2':
+        duration = 2;
+        break;
+      case '1/4':
+        duration = 1;
+        break;
+      case '1/8':
+        duration = 0.5;
+        break;
+      case '1/16':
+        duration = 0.25;
+        break;
+    }
+    let seconds_per_beat = 60 / bpm;
+    let seconds_per_note = seconds_per_beat * duration;
+    $('#notes_string').val($('#notes_string').val().replace(/\(\d+\.\d+\)/g, `(${seconds_per_note.toFixed(3)})`));
+  });
+</script>
+</body>
+
+</html>
