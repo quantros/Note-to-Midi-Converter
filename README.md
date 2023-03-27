@@ -10,7 +10,7 @@ A simple web application that converts a string of musical notes into a MIDI fil
 3. Click "Convert to MIDI" to generate a MIDI file.
 4. Download the generated MIDI file.
 
-## Exmple C4 D4 E4 F4 G4 A4 B4 C5.
+## Exmple C4(1/4) D4(1/2) E4(1/4) F4(1/6) G4(1/8).
 
 ## Technologies Used
 
